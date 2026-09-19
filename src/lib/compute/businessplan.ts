@@ -17,6 +17,12 @@ export interface BPBaseline {
   giacenzaStorica: number;
   periodLabel: string;
   periodDate: string;
+  // Stato Patrimoniale baseline (valori reali del periodo di partenza, per la colonna "Anno 0")
+  liq0: number;
+  creditiComm0: number;
+  rimanenzeSp0: number;
+  immobilizzazioni0: number;
+  debitiForn0: number;
 }
 
 export function computeBPBaseline(period: Periodo, calc: PeriodCalc, ratios: RatiosResult): BPBaseline {
@@ -39,6 +45,11 @@ export function computeBPBaseline(period: Periodo, calc: PeriodCalc, ratios: Rat
     giacenzaStorica: isFinite(ratios.dmag) ? Math.round(ratios.dmag) : 30,
     periodLabel: period.label,
     periodDate: period.date,
+    liq0: sp.liqImmediate.total,
+    creditiComm0: ce.creditiCommercialiKeyword > 0 ? ce.creditiCommercialiKeyword : sp.creditiBreve.total,
+    rimanenzeSp0: sp.rimanenze.total,
+    immobilizzazioni0: sp.immobilizzazioni.total,
+    debitiForn0: ce.debitiCommercialiKeyword > 0 ? ce.debitiCommercialiKeyword : sp.debitiFornitori.total,
   };
 }
 
@@ -104,6 +115,16 @@ export interface BPYearRow {
   ebitMargin: number;
   roe: number;
   pfnEbitda: number;
+  // Stato Patrimoniale prospettico
+  crediti: number;
+  rimanenze: number;
+  debitiFornitori: number;
+  immobilizzazioniNette: number;
+  liquidita: number;
+  debitiFinanziari: number;
+  totaleImpieghi: number;
+  totaleFonti: number;
+  quadratura: number;
 }
 
 export function projectScenario(baseline: BPBaseline, assum: Assumptions, years: number): BPYearRow[] {
@@ -114,6 +135,8 @@ export function projectScenario(baseline: BPBaseline, assum: Assumptions, years:
   let oneriFin = baseline.oneriFin0;
   let pn = baseline.pn0;
   let pfn = baseline.pfn0;
+  let immobilizzazioniNette = baseline.immobilizzazioni0;
+  const liquidita = baseline.liq0;
 
   const cvPrev0 = baseline.ricavi0 * (assum.incidenzaCV / 100);
   let ccnPrev =
@@ -150,6 +173,12 @@ export function projectScenario(baseline: BPBaseline, assum: Assumptions, years:
     const flussoDisponibile = flussoOperativo - capex;
     pfn = pfn - flussoDisponibile;
     pn = pn + utileNetto;
+    immobilizzazioniNette = Math.max(0, immobilizzazioniNette + capex - ammortamenti);
+
+    const debitiFinanziari = pfn + liquidita;
+    const totaleImpieghi = liquidita + crediti + rimanenze + immobilizzazioniNette;
+    const totaleFonti = debiti + debitiFinanziari + pn;
+    const quadratura = totaleImpieghi - totaleFonti;
 
     rows.push({
       year: y,
@@ -176,6 +205,15 @@ export function projectScenario(baseline: BPBaseline, assum: Assumptions, years:
       ebitMargin: ricavi ? ebit / ricavi : NaN,
       roe: pn ? utileNetto / pn : NaN,
       pfnEbitda: ebitda ? pfn / ebitda : NaN,
+      crediti,
+      rimanenze,
+      debitiFornitori: debiti,
+      immobilizzazioniNette,
+      liquidita,
+      debitiFinanziari,
+      totaleImpieghi,
+      totaleFonti,
+      quadratura,
     });
   }
 

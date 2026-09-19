@@ -288,7 +288,8 @@ export default function BusinessPlanTab() {
           ))}
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="font-bold text-sm mb-2">Conto Economico Prospettico</div>
+        <div className="overflow-x-auto mb-6">
           <table className="w-full border-collapse text-[13px]">
             <thead>
               <tr>
@@ -323,8 +324,73 @@ export default function BusinessPlanTab() {
               <BpRow label="UTILE NETTO" values={[NaN, ...selectedRows.map((r) => r.utileNetto)]} fmt={fmtEur} kind="tot" />
               <BpRow label="EBITDA Margin %" values={[NaN, ...selectedRows.map((r) => r.ebitdaMargin)]} fmt={fmtPct} kind="sub" />
               <BpRow label="ROE %" values={[NaN, ...selectedRows.map((r) => r.roe)]} fmt={fmtPct} kind="sub" />
-              <BpRow label="Posizione Finanziaria Netta" values={[baseline.pfn0, ...selectedRows.map((r) => r.pfn)]} fmt={fmtEur} kind="sub" />
               <BpRow label="Flusso di cassa disponibile" values={[NaN, ...selectedRows.map((r) => r.flussoDisponibile)]} fmt={fmtEur} kind="sub" />
+            </tbody>
+          </table>
+        </div>
+
+        <div className="font-bold text-sm mb-2">Stato Patrimoniale Prospettico</div>
+        <div className="note mb-2">
+          Proiezione semplificata: la liquidità è mantenuta costante al valore del periodo di partenza e
+          si assume che il flusso di cassa disponibile di ciascun anno riduca (o aumenti, se negativo) i debiti
+          finanziari. Crediti, rimanenze e debiti verso fornitori sono stimati dai giorni medi (DSO/DPO/giacenza)
+          impostati nello scenario. Non essendo un modello a tre prospetti pienamente articolato, può residuare
+          un piccolo scostamento tra Totale Impieghi e Totale Fonti, riportato in modo esplicito come nel
+          Rendiconto Finanziario storico.
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-[13px]">
+            <thead>
+              <tr>
+                <th className="text-left py-2 px-2.5 text-[11.5px] uppercase tracking-wide text-text-3 border-b-2 border-border">
+                  Voce
+                </th>
+                <th className="text-right py-2 px-2.5 text-[11.5px] uppercase tracking-wide text-text-3 border-b-2 border-border whitespace-nowrap">
+                  Anno 0
+                </th>
+                {selectedRows.map((r) => (
+                  <th
+                    key={r.year}
+                    className="text-right py-2 px-2.5 text-[11.5px] uppercase tracking-wide text-text-3 border-b-2 border-border whitespace-nowrap"
+                  >
+                    Anno {r.year}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <BpRow label="Liquidità" values={[baseline.liq0, ...selectedRows.map((r) => r.liquidita)]} fmt={fmtEur} />
+              <BpRow label="Crediti commerciali" values={[baseline.creditiComm0, ...selectedRows.map((r) => r.crediti)]} fmt={fmtEur} kind="sub" />
+              <BpRow label="Rimanenze" values={[baseline.rimanenzeSp0, ...selectedRows.map((r) => r.rimanenze)]} fmt={fmtEur} kind="sub" />
+              <BpRow label="Immobilizzazioni nette" values={[baseline.immobilizzazioni0, ...selectedRows.map((r) => r.immobilizzazioniNette)]} fmt={fmtEur} kind="sub" />
+              <BpRow
+                label="TOTALE IMPIEGHI"
+                values={[
+                  baseline.liq0 + baseline.creditiComm0 + baseline.rimanenzeSp0 + baseline.immobilizzazioni0,
+                  ...selectedRows.map((r) => r.totaleImpieghi),
+                ]}
+                fmt={fmtEur}
+                kind="tot"
+              />
+              <BpRow label="Debiti verso fornitori" values={[baseline.debitiForn0, ...selectedRows.map((r) => r.debitiFornitori)]} fmt={fmtEur} kind="sub" />
+              <BpRow
+                label="Debiti finanziari"
+                values={[baseline.pfn0 + baseline.liq0, ...selectedRows.map((r) => r.debitiFinanziari)]}
+                fmt={fmtEur}
+                kind="sub"
+              />
+              <BpRow label="Patrimonio Netto" values={[baseline.pn0, ...selectedRows.map((r) => r.pn)]} fmt={fmtEur} kind="sub" />
+              <BpRow
+                label="TOTALE FONTI"
+                values={[
+                  baseline.debitiForn0 + (baseline.pfn0 + baseline.liq0) + baseline.pn0,
+                  ...selectedRows.map((r) => r.totaleFonti),
+                ]}
+                fmt={fmtEur}
+                kind="tot"
+              />
+              <BpRow label="Posizione Finanziaria Netta" values={[baseline.pfn0, ...selectedRows.map((r) => r.pfn)]} fmt={fmtEur} kind="sub" />
+              <BpRow label="Residuo di quadratura" values={[0, ...selectedRows.map((r) => r.quadratura)]} fmt={fmtEur} kind="sub" />
             </tbody>
           </table>
         </div>
