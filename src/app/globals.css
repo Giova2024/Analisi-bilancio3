@@ -1,26 +1,108 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f2f5f9;
+  --panel: #ffffff;
+  --panel-2: #f8fafc;
+  --border: #e2e8f0;
+  --border-2: #cbd5e1;
+  --text: #0f172a;
+  --text-2: #475569;
+  --text-3: #94a3b8;
+  --accent: #2563eb;
+  --accent-2: #1d4ed8;
+  --accent-bg: #eff6ff;
+  --green: #16a34a;
+  --green-bg: #f0fdf4;
+  --amber: #d97706;
+  --amber-bg: #fffbeb;
+  --red: #dc2626;
+  --red-bg: #fef2f2;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-border: var(--border);
+  --color-border-2: var(--border-2);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-bg: var(--accent-bg);
+  --color-green: var(--green);
+  --color-green-bg: var(--green-bg);
+  --color-amber: var(--amber);
+  --color-amber-bg: var(--amber-bg);
+  --color-red: var(--red);
+  --color-red-bg: var(--red-bg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html, body {
+  background: var(--bg);
+  color: var(--text);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+}
+
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+@layer components {
+  .btn {
+    @apply bg-panel border border-border-2 text-text px-3.5 py-1.5 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors;
+  }
+  .btn:hover { @apply bg-panel-2; }
+  .btn-primary {
+    @apply bg-accent border-accent text-white;
+  }
+  .btn-primary:hover { @apply bg-accent-2; }
+  .btn-danger {
+    @apply bg-red-bg border-[#fecaca] text-red;
+  }
+  .btn-sm {
+    @apply px-2.5 py-1 text-xs rounded-md;
+  }
+  .panel {
+    @apply bg-panel border border-border rounded-xl p-5 mb-4;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 8px rgba(15, 23, 42, 0.04);
+  }
+  .panel-title {
+    @apply text-[15px] font-bold mb-0.5;
+  }
+  .panel-desc {
+    @apply text-[12.5px] text-text-3 mb-3.5;
+  }
+  .field label {
+    @apply text-[12.5px] font-semibold text-text-2 block mb-1;
+  }
+  .field input[type="text"],
+  .field input[type="date"],
+  .field input[type="number"],
+  .field select {
+    @apply w-full px-2.5 py-1.5 border border-border-2 rounded-lg text-sm bg-white text-text;
+  }
+  .note {
+    @apply text-xs text-text-3 bg-panel-2 border border-border rounded-lg px-3 py-2.5 mt-2.5;
+  }
+  .note b { @apply text-text-2; }
+  .warn {
+    @apply bg-amber-bg border-[#fde68a] text-[#92400e];
+  }
+  .empty-state {
+    @apply text-center py-12 px-5 text-text-3;
+  }
+  .dot {
+    @apply inline-block w-2 h-2 rounded-full mr-1.5;
+  }
+  .dot-green { @apply bg-green; }
+  .dot-amber { @apply bg-amber; }
+  .dot-red { @apply bg-red; }
+  .dot-grey { @apply bg-text-3; }
 }
