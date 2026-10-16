@@ -16,7 +16,14 @@ function classicScriptForFileProtocol(): Plugin {
     transformIndexHtml(html) {
       return html
         .replace(/<script type="module" crossorigin src="([^"]+)"><\/script>/g, '<script defer src="$1"></script>')
-        .replace(/<link rel="stylesheet" crossorigin href=/g, '<link rel="stylesheet" href=');
+        .replace(/<link rel="stylesheet" crossorigin href=/g, '<link rel="stylesheet" href=')
+        // Nella build il messaggio "file di sviluppo" diventa un avviso mostrato solo se lo
+        // script non parte (React sostituisce il contenuto di #root appena si avvia).
+        .replace(
+          /<!-- boot-fallback:start -->[\s\S]*?<!-- boot-fallback:end -->/,
+          `<noscript><div style="max-width:640px;margin:60px auto;padding:20px 24px;font:15px/1.5 'Segoe UI',Arial,sans-serif">Per usare l'applicazione è necessario abilitare JavaScript.</div></noscript>
+      <div style="max-width:640px;margin:60px auto;padding:20px 24px;font:15px/1.5 'Segoe UI',Arial,sans-serif;color:#64748b">Caricamento in corso… Se questo messaggio non scompare, verifica che la cartella <b>assets</b> sia accanto a index.html.</div>`
+        );
     },
   };
 }

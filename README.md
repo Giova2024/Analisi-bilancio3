@@ -5,7 +5,9 @@ KPI, business plan e relazione descrittiva. Tutti i dati restano nel browser.
 
 ## Usare l'app
 
-Aprire **`dist/index.html`** con un doppio clic (funziona anche senza server e offline).
+Aprire **`Analisi-di-Bilancio.html`** (collegamento) oppure **`dist/index.html`** con un doppio clic
+(funziona anche senza server e offline). **Non** aprire `index.html` nella cartella principale: è il
+file di sviluppo e funziona solo con `npm run dev`.
 La cartella `dist/` può essere copiata o spostata dove si vuole: contiene
 
 ```

@@ -10,7 +10,15 @@
     />
   </head>
   <body class="min-h-full flex flex-col bg-bg text-text">
-    <div id="root"></div>
+    <div id="root">
+      <!-- boot-fallback:start -->
+      <div style="max-width:640px;margin:60px auto;padding:20px 24px;font:15px/1.5 'Segoe UI',Arial,sans-serif;color:#1e293b;border:1px solid #fcd34d;background:#fffbeb;border-radius:10px">
+        <b>Questo è il file di sviluppo, non l'applicazione.</b><br />
+        Per usare l'app apri <b>dist/index.html</b> (oppure <b>Analisi-di-Bilancio.html</b> nella cartella del
+        progetto). Questo file funziona solo con <code>npm run dev</code>.
+      </div>
+      <!-- boot-fallback:end -->
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
