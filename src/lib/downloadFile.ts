@@ -1,5 +1,9 @@
 export function downloadTextFile(filename: string, content: string, mime = "text/plain"): void {
-  const blob = new Blob([content], { type: `${mime};charset=utf-8` });
+  // Il BOM fa riconoscere a Excel la codifica UTF-8 dei CSV (accenti, simbolo €).
+  const blob = new Blob([mime === "text/csv" ? "\uFEFF" + content : content], {
+    type: `${mime};charset=utf-8`,
+  });
+
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

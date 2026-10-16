@@ -38,6 +38,8 @@ export interface Periodo {
   type: PeriodType;
   filename: string;
   accounts: RawAccount[];
+  /** true se la situazione è stata deselezionata nella scheda Importazione (esclusa da tutte le analisi). */
+  excluded?: boolean;
 }
 
 // [sezione, l1, l2, n, descrizione]
@@ -96,6 +98,18 @@ export interface BusinessPlanState {
   scenarios: Record<ScenarioKey, Assumptions>;
 }
 
+/** Relazione generata (scheda Relazione), modificabile dall'utente. */
+export interface ReportState {
+  html: string;
+  refId: string;
+  cmpId: string;
+  author: string;
+  place: string;
+  generatedAt: string;
+  edited: boolean;
+  editedAt?: string;
+}
+
 export interface AppState {
   periods: Periodo[];
   overrides: Record<string, Override>;
@@ -104,6 +118,8 @@ export interface AppState {
   bepInputs: Record<string, BepInput>;
   manualEntries: Record<string, ManualEntry[]>;
   businessPlan: BusinessPlanState | null;
+  companyName: string;
+  report: ReportState | null;
 }
 
 // ---- Bucket / computation types ----

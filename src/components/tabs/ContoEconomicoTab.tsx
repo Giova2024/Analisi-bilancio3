@@ -3,6 +3,7 @@
 import { useState } from "react";
 import clsx from "clsx";
 import { useDerived } from "@/lib/useDerived";
+import { useStore } from "@/lib/store";
 import FinTable from "../FinTable";
 import { ceVaRows, ceCmRows } from "@/lib/rows/ceRows";
 import { fmtPct, fmtX } from "@/lib/numberFormat";
@@ -10,6 +11,8 @@ import { fmtPct, fmtX } from "@/lib/numberFormat";
 export default function ContoEconomicoTab() {
   const { periods, calcs } = useDerived();
   const [view, setView] = useState<"va" | "cm">("va");
+  const varFixOverrides = useStore((s) => s.varFixOverrides);
+  const varFixCount = Object.keys(varFixOverrides).length;
 
   return (
     <section>
@@ -53,7 +56,7 @@ export default function ContoEconomicoTab() {
         {periods.length === 0 ? (
           <div className="empty-state">
             <div className="text-4xl mb-2.5">📊</div>
-            Nessun periodo importato. Vai alla scheda &quot;Importazione&quot; per iniziare.
+            Nessun periodo importato. Vai a &quot;Impostazioni › Importazione&quot; per iniziare.
           </div>
         ) : (
           <>
@@ -82,7 +85,44 @@ export default function ContoEconomicoTab() {
                 })}
               </div>
             )}
-            <FinTable periods={periods} calcs={calcs} rows={view === "va" ? ceVaRows : ceCmRows} />
+            {view === "cm" && (
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-3 px-3 py-2 rounded-lg border border-border bg-panel-2 text-xs text-text-2 no-print">
+                <span>
+                  Per spostare un costo tra <b>variabili</b> e <b>fissi</b>, espandi la voce (▸) e usa il
+                  selettore <b>V / F</b> accanto al conto. La modifica vale per il conto in tutti i periodi e
+                  si riflette anche su Break-even e indici collegati.
+                  {varFixCount > 0 && (
+                    <span className="text-[#92400e]">
+                      {" "}
+                      Conti riclassificati manualmente: <b>{varFixCount}</b>.
+                    </span>
+                  )}
+                </span>
+                {varFixCount > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    onClick={() => {
+                      if (
+                        confirm(
+                          "Ripristinare la classificazione variabile/fisso predefinita per tutti i conti?"
+                        )
+                      )
+                        useStore.setState({ varFixOverrides: {} });
+                    }}
+                  >
+                    ↺ Ripristina classificazione V/F
+                  </button>
+                )}
+              </div>
+            )}
+            <FinTable
+              periods={periods}
+              calcs={calcs}
+              rows={view === "va" ? ceVaRows : ceCmRows}
+              varFix={view === "cm"}
+            />
+
           </>
         )}
       </div>

@@ -13,6 +13,7 @@ export function exportJson(state: AppState) {
       type: p.type,
       filename: p.filename,
       accounts: p.accounts,
+      excluded: !!p.excluded,
     })),
     overrides: state.overrides,
     varFixOverrides: state.varFixOverrides,
@@ -20,6 +21,8 @@ export function exportJson(state: AppState) {
     bepInputs: state.bepInputs,
     manualEntries: state.manualEntries,
     businessPlan: state.businessPlan,
+    companyName: state.companyName || "",
+    report: state.report || null,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -41,6 +44,8 @@ export interface ImportedJson {
   bepInputs: AppState["bepInputs"];
   manualEntries: AppState["manualEntries"];
   businessPlan: AppState["businessPlan"];
+  companyName: string;
+  report: AppState["report"];
   exportedAt?: string;
 }
 
@@ -60,6 +65,7 @@ export function parseImportedJson(raw: unknown): ImportedJson {
     type: p.type === "annuale" ? "annuale" : "infrannuale",
     filename: typeof p.filename === "string" ? p.filename : "",
     accounts: Array.isArray(p.accounts) ? (p.accounts as Periodo["accounts"]) : [],
+    excluded: !!p.excluded,
   }));
 
   return {
@@ -70,6 +76,11 @@ export function parseImportedJson(raw: unknown): ImportedJson {
     bepInputs: (data.bepInputs as AppState["bepInputs"]) || {},
     manualEntries: (data.manualEntries as AppState["manualEntries"]) || {},
     businessPlan: (data.businessPlan as AppState["businessPlan"]) || null,
+    companyName: typeof data.companyName === "string" ? data.companyName : "",
+    report:
+      data.report && typeof (data.report as { html?: unknown }).html === "string"
+        ? (data.report as AppState["report"])
+        : null,
     exportedAt: typeof data.exportedAt === "string" ? data.exportedAt : undefined,
   };
 }

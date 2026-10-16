@@ -96,7 +96,7 @@ export default function MappaturaTab() {
         {periods.length === 0 ? (
           <div className="empty-state">
             <div className="text-4xl mb-2.5">📊</div>
-            Nessun periodo importato. Vai alla scheda &quot;Importazione&quot; per iniziare.
+            Nessun periodo importato. Vai a &quot;Impostazioni › Importazione&quot; per iniziare.
           </div>
         ) : (
           <div className="overflow-x-auto">

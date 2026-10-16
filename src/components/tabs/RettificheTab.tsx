@@ -422,14 +422,14 @@ export default function RettificheTab() {
           Come in un vero bilancio, ogni rettifica ha una contropartita: se aggiungi un costo o un ricavo che
           non è ancora transitato per la cassa/banca o per un debito/credito, aggiungi anche la rettifica di
           contropartita (es. un ricavo non fatturato va di norma in contropartita a un credito). Se lo Stato
-          Patrimoniale non quadra più, la scheda &quot;Importazione&quot; mostrerà un avviso di sbilancio sul
+          Patrimoniale non quadra più, la scheda &quot;Impostazioni › Importazione&quot; mostrerà un avviso di sbilancio sul
           periodo interessato.
         </div>
 
         {periods.length === 0 ? (
           <div className="empty-state">
             <div className="text-4xl mb-2.5">📊</div>
-            Nessun periodo importato. Vai alla scheda &quot;Importazione&quot; per iniziare.
+            Nessun periodo importato. Vai a &quot;Impostazioni › Importazione&quot; per iniziare.
           </div>
         ) : (
           <>

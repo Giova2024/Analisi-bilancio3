@@ -18,18 +18,55 @@ const EXAMPLE_ROWS: [string, string, string, string, string][] = [
   ["502101", "Vendite prodotti finiti e merci Italia", "A", "-180.000", ""],
 ];
 
+type PendingJob = { filename: string; accounts: RawAccount[]; empty?: boolean };
+
+const HELP_OPEN_KEY = "bilancio_import_help_open";
+
 export default function ImportTab() {
+
   const addPeriod = useStore((s) => s.addPeriod);
   const deletePeriod = useStore((s) => s.deletePeriod);
   const overrides = useStore((s) => s.overrides);
   const resetOverrides = useStore((s) => s.resetOverrides);
-  const { periods, calcs } = useDerived();
+  const { allPeriods: periods, calcs } = useDerived();
+  const includedCount = periods.filter((p) => !p.excluded).length;
   const overridesCount = Object.keys(overrides).length;
   const [dragOver, setDragOver] = useState(false);
-  const [pending, setPending] = useState<{ filename: string; accounts: RawAccount[] } | null>(null);
-  const [queue, setQueue] = useState<{ filename: string; accounts: RawAccount[] }[]>([]);
+  const [pending, setPending] = useState<PendingJob | null>(null);
+  const [queue, setQueue] = useState<PendingJob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pianoInputRef = useRef<HTMLInputElement>(null);
+  const [helpOpen, setHelpOpen] = useState(() => {
+    try {
+      return localStorage.getItem(HELP_OPEN_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  /** Include/esclude un periodo dalle analisi (id null = tutti i periodi). */
+  function setIncluded(id: string | null, included: boolean) {
+    useStore.setState((s) => ({
+      periods: s.periods.map((p) =>
+        id === null || p.id === id ? { ...p, excluded: !included } : p
+      ),
+    }));
+  }
+
+  /** Prepara un periodo senza conti, datato un anno dopo l'ultimo presente. */
+  function addEmptyPeriod() {
+    const dates = periods.map((p) => p.date).sort();
+    const last = dates.length ? dates[dates.length - 1] : null;
+    let d = last
+      ? String(+last.slice(0, 4) + 1) + last.slice(4)
+      : new Date().getFullYear() + "-12-31";
+    if (d.slice(5) === "02-29") d = d.slice(0, 5) + "02-28";
+    setPending({
+      filename: `Periodo vuoto ${d.slice(8, 10)}-${d.slice(5, 7)}-${d.slice(0, 4)}`,
+      accounts: [],
+      empty: true,
+    });
+  }
 
   async function handleFiles(fileList: FileList | File[]) {
     const files = Array.from(fileList);
@@ -61,7 +98,7 @@ export default function ImportTab() {
     filename: string;
     accounts: RawAccount[];
   }) {
-    addPeriod(input);
+    addPeriod(pending?.empty ? { ...input, filename: "(periodo vuoto)" } : input);
     if (queue.length > 0) {
       setPending(queue[0]);
       setQueue(queue.slice(1));
@@ -86,7 +123,7 @@ export default function ImportTab() {
   function handlePianoFile(e: React.ChangeEvent<HTMLInputElement>) {
     e.target.value = "";
     alert(
-      "Il caricamento di un piano dei conti personalizzato con struttura gerarchica complessa non è ancora supportato automaticamente in questa versione. Usa invece la scheda 'Mappatura Conti' per correggere manualmente i singoli conti non riconosciuti."
+      "Il caricamento di un piano dei conti personalizzato con struttura gerarchica complessa non è ancora supportato automaticamente in questa versione. Usa invece la scheda 'Impostazioni › Mappatura Conti' per correggere manualmente i singoli conti non riconosciuti."
     );
   }
 
@@ -104,7 +141,7 @@ export default function ImportTab() {
 
   function handleResetMapping() {
     const ok = window.confirm(
-      `Ripristinare la mappatura di default? Le ${overridesCount} riclassificazioni manuali salvate nella scheda "Mappatura Conti" verranno eliminate e tutti i conti torneranno alla classificazione automatica del piano dei conti standard (o dell'euristica, se non presenti nel piano).`
+      `Ripristinare la mappatura di default? Le ${overridesCount} riclassificazioni manuali salvate nella scheda "Impostazioni › Mappatura Conti" verranno eliminate e tutti i conti torneranno alla classificazione automatica del piano dei conti standard (o dell'euristica, se non presenti nel piano).`
     );
     if (!ok) return;
     resetOverrides();
@@ -120,8 +157,25 @@ export default function ImportTab() {
           tuo browser: nessun file viene caricato altrove.
         </div>
 
-        <div className="border border-border rounded-[10px] p-3.5 bg-panel-2 mb-3.5">
-          <div className="font-bold text-[13px] mb-1.5">📋 Come deve essere strutturato il file da importare</div>
+        <details
+          className="imp-help border border-border rounded-[10px] p-3.5 bg-panel-2 mb-3.5"
+          open={helpOpen}
+          onToggle={(e) => {
+            const open = e.currentTarget.open;
+            setHelpOpen(open);
+            try {
+              localStorage.setItem(HELP_OPEN_KEY, open ? "1" : "0");
+            } catch {
+              /* localStorage non disponibile */
+            }
+          }}
+        >
+          <summary className="font-bold text-[13px] cursor-pointer select-none">
+            📋 Come deve essere strutturato il file da importare
+            <span className="font-normal text-[11.5px] text-text-3 ml-2 no-print">
+              {helpOpen ? "(clicca per nascondere)" : "(clicca per visualizzare)"}
+            </span>
+          </summary>
           <div className="text-[12.5px] text-text-2 leading-relaxed mb-2.5">
             Ogni riga rappresenta il saldo di un conto della situazione contabile (bilancio di verifica) alla
             data del periodo. La prima riga deve contenere le intestazioni delle colonne; l&apos;ordine delle
@@ -132,7 +186,9 @@ export default function ImportTab() {
             <li><b>Descrizione</b> — la descrizione testuale del conto, usata per il riconoscimento automatico quando il codice non è nel piano standard.</li>
             <li><b>Natura</b> — Dare (D) / Avere (A) del conto. Colonna facoltativa, puramente informativa (non viene letta dal programma): il segno che conta ai fini del calcolo è quello della colonna Saldo.</li>
             <li>
-              <b>Saldo</b> (o Importo) — il saldo del conto in Euro (formato numerico italiano, es. 12.345,67),{" "}
+              <b>Saldo</b> (o Importo) — il saldo del conto in Euro (formato numerico italiano, es.
+              12.345,67, oppure anglosassone, es. 12,345.67; nei file Excel viene letto il valore numerico
+              della cella),{" "}
               <b>con il segno secondo la natura del conto</b>: positivo per i conti di natura Dare (attività
               come banca, cassa, crediti, magazzino, immobilizzazioni; e costi), <b>negativo</b> per i conti di
               natura Avere (passività, patrimonio netto e ricavi). È il formato tipico dell&apos;esportazione
@@ -170,7 +226,7 @@ export default function ImportTab() {
           <button type="button" className="btn btn-sm no-print" onClick={handleDownloadExampleAccounts}>
             ⬇ Scarica file di esempio (CSV)
           </button>
-        </div>
+        </details>
         <div
           className={clsx(
             "no-print border-2 border-dashed rounded-xl py-9 px-5 text-center cursor-pointer transition-colors",
@@ -202,19 +258,73 @@ export default function ImportTab() {
             onChange={(e) => e.target.files && handleFiles(e.target.files)}
           />
         </div>
+        <div className="no-print flex items-center gap-2.5 flex-wrap mt-2.5">
+          <button type="button" className="btn btn-sm" onClick={addEmptyPeriod}>
+            ➕ Aggiungi periodo vuoto
+          </button>
+          <span className="text-[12px] text-text-3">
+            Crea un periodo senza importare alcun file (es. un preventivo o un esercizio non ancora
+            chiuso) e inseriscine i saldi dalla scheda Rettifiche Extracontabili.
+          </span>
+        </div>
 
         {periods.length === 0 ? (
           <div className="empty-state">
             <div className="es-icon text-4xl mb-2.5">📄</div>
-            Nessun periodo importato. Carica un file per iniziare.
+            Nessun periodo importato. Carica un file oppure aggiungi un periodo vuoto per iniziare.
           </div>
         ) : (
-          <div className="grid gap-3 mt-3.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))" }}>
+          <>
+          <div className="flex items-center justify-between flex-wrap gap-2 mt-3.5 text-xs text-text-2">
+            <span>
+              Situazioni incluse nei calcoli: <b>{includedCount}</b> di <b>{periods.length}</b>.
+              Deseleziona una situazione per escluderla da tutte le analisi (non viene eliminata).
+              {includedCount === 0 && (
+                <span className="text-red font-semibold">
+                  {" "}
+                  Nessuna situazione selezionata: le analisi risulteranno vuote.
+                </span>
+              )}
+            </span>
+            {periods.length > 1 && (
+              <span className="flex gap-2 no-print">
+                <button type="button" className="btn btn-sm" onClick={() => setIncluded(null, true)}>
+                  ☑ Seleziona tutte
+                </button>
+                <button type="button" className="btn btn-sm" onClick={() => setIncluded(null, false)}>
+                  ☐ Deseleziona tutte
+                </button>
+              </span>
+            )}
+          </div>
+          <div className="grid gap-3 mt-2.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))" }}>
             {periods.map((p) => {
               const calc = calcs[p.id];
               const sbilancio = Math.abs(calc.sp.quadratura) > 1;
               return (
-                <div key={p.id} className="border border-border rounded-lg p-3.5 bg-panel-2 relative">
+                <div
+                  key={p.id}
+                  className={clsx(
+                    "border rounded-lg p-3.5 relative transition-opacity",
+                    p.excluded
+                      ? "border-dashed border-border bg-panel opacity-60"
+                      : "border-border bg-panel-2"
+                  )}
+                >
+                  <label
+                    className={
+                      "no-print flex items-center gap-1.5 text-[11.5px] font-semibold mb-1.5 cursor-pointer select-none " +
+                      (p.excluded ? "text-text-3" : "text-accent-2")
+                    }
+                  >
+                    <input
+                      type="checkbox"
+                      className="cursor-pointer"
+                      checked={!p.excluded}
+                      onChange={(e) => setIncluded(p.id, e.target.checked)}
+                    />
+                    {p.excluded ? "Esclusa dai calcoli" : "Inclusa nei calcoli"}
+                  </label>
                   <button
                     type="button"
                     className="no-print absolute top-2 right-2 bg-transparent border-none text-text-3 text-sm px-1.5 py-0.5 rounded hover:bg-red-bg hover:text-red"
@@ -252,6 +362,7 @@ export default function ImportTab() {
               );
             })}
           </div>
+          </>
         )}
 
         <div className="note mt-3">

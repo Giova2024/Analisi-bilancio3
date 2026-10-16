@@ -1,4 +1,4 @@
-import { classifyAccount, classifyVarFix } from "../classify";
+import { PIANO, classifyAccount, classifyVarFix } from "../classify";
 import type { AppState, ClassifiedAccount, Periodo, PeriodCalc } from "../types";
 import { buildSyntheticAccounts } from "./synthetic";
 import { computeSP } from "./sp";
@@ -12,7 +12,12 @@ export function computePeriod(
   manualEntries: AppState["manualEntries"],
   excludedAccounts: AppState["excludedAccounts"] = {}
 ): PeriodCalc {
-  const classified: ClassifiedAccount[] = period.accounts.map((raw) => {
+  const classified: ClassifiedAccount[] = period.accounts.map((orig) => {
+    // Se il file non riporta la descrizione, usa quella del piano dei conti standard.
+    const raw =
+      orig.desc && String(orig.desc).trim()
+        ? orig
+        : { ...orig, desc: (PIANO[orig.ref] || PIANO[orig.conto] || [])[4] || "" };
     const cls = classifyAccount(raw, overrides);
     const excluded = !!(excludedAccounts[raw.conto] || excludedAccounts[raw.ref]);
     return {

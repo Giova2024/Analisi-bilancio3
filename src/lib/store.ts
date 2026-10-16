@@ -8,6 +8,7 @@ import type {
   Override,
   Periodo,
   RawAccount,
+  ReportState,
   ScenarioKey,
   VarFix,
 } from "./types";
@@ -22,6 +23,8 @@ const initialState: AppState = {
   bepInputs: {},
   manualEntries: {},
   businessPlan: null,
+  companyName: "",
+  report: null,
 };
 
 function genId(prefix: string): string {
@@ -49,6 +52,8 @@ interface Store extends AppState {
   addManualEntry: (periodId: string, entry: Omit<ManualEntry, "id">) => void;
   deleteManualEntry: (periodId: string, entryId: string) => void;
   setBusinessPlan: (bp: BusinessPlanState) => void;
+  setCompanyName: (name: string) => void;
+  setReport: (report: ReportState | null) => void;
   updateScenarioAssumption: (scenario: ScenarioKey, field: string, value: number) => void;
   resetAll: () => void;
   importState: (data: Partial<AppState>) => void;
@@ -123,6 +128,10 @@ export const useStore = create<Store>()(
 
       setBusinessPlan: (bp) => set({ businessPlan: bp }),
 
+      setCompanyName: (name) => set({ companyName: name }),
+
+      setReport: (report) => set({ report }),
+
       updateScenarioAssumption: (scenario, field, value) =>
         set((state) => {
           if (!state.businessPlan) return {};
@@ -151,6 +160,8 @@ export const useStore = create<Store>()(
           bepInputs: data.bepInputs ?? {},
           manualEntries: data.manualEntries ?? {},
           businessPlan: data.businessPlan ?? null,
+          companyName: data.companyName ?? "",
+          report: data.report ?? null,
         })),
     }),
     {
@@ -163,6 +174,8 @@ export const useStore = create<Store>()(
         bepInputs: state.bepInputs,
         manualEntries: state.manualEntries,
         businessPlan: state.businessPlan,
+        companyName: state.companyName,
+        report: state.report,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated();

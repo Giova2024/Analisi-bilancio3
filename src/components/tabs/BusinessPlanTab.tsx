@@ -63,8 +63,17 @@ export default function BusinessPlanTab() {
 
   const baseline: BPBaseline | null = useMemo(() => {
     if (!baselinePeriod) return null;
-    return computeBPBaseline(baselinePeriod, calcs[baselinePeriod.id], ratios[baselinePeriod.id]);
-  }, [baselinePeriod, calcs, ratios]);
+    // Esercizio precedente (ultimo periodo di un altro esercizio) per il flusso di cassa dell'Anno 0.
+    const prev = periods
+      .filter((p) => p.date < baselinePeriod.date && p.fyStart !== baselinePeriod.fyStart)
+      .pop();
+    return computeBPBaseline(
+      baselinePeriod,
+      calcs[baselinePeriod.id],
+      ratios[baselinePeriod.id],
+      prev ? { label: prev.label, calc: calcs[prev.id] } : null
+    );
+  }, [baselinePeriod, calcs, ratios, periods]);
 
   useEffect(() => {
     if (!baseline || !baselinePeriod) return;
@@ -104,7 +113,7 @@ export default function BusinessPlanTab() {
           <div className="panel-title">Business Plan</div>
           <div className="empty-state">
             <div className="text-4xl mb-2.5">📊</div>
-            Nessun periodo importato. Vai alla scheda &quot;Importazione&quot; per iniziare.
+            Nessun periodo importato. Vai a &quot;Impostazioni › Importazione&quot; per iniziare.
           </div>
         </div>
       </section>
@@ -266,11 +275,11 @@ export default function BusinessPlanTab() {
               <Line data={lineChart((r) => r.ricavi, baseline.ricavi0)} options={chartOpts} />
             </ChartBox>
             <ChartBox title="EBITDA">
-              <Line data={lineChart((r) => r.ebitda, calcs[baselinePeriod.id].ce.ebitda)} options={chartOpts} />
+              <Line data={lineChart((r) => r.ebitda, baseline.ebitda0)} options={chartOpts} />
             </ChartBox>
             <ChartBox title="Utile Netto">
               <Line
-                data={lineChart((r) => r.utileNetto, calcs[baselinePeriod.id].ce.utileNetto)}
+                data={lineChart((r) => r.utileNetto, baseline.utile0)}
                 options={chartOpts}
               />
             </ChartBox>
@@ -296,7 +305,22 @@ export default function BusinessPlanTab() {
           ))}
         </div>
 
-        <div className="font-bold text-sm mb-2">Conto Economico Prospettico</div>
+        <div className="font-bold text-sm mb-1">Conto Economico Prospettico</div>
+        <div className="text-[11.5px] text-text-3 mb-2">
+          Anno 0 = dati storici di {baseline.periodLabel} riclassificati con lo stesso schema delle
+          proiezioni (margine di contribuzione, costi fissi, ammortamenti, oneri finanziari, imposte).{" "}
+          {Math.abs(baseline.utileBilancio0 - baseline.utile0) > 0.5 && (
+            <span>
+              L&apos;utile netto da bilancio è <b>{fmtEur(baseline.utileBilancio0)}</b>: la differenza (
+              {fmtEur(baseline.utileBilancio0 - baseline.utile0)}) deriva da voci non modellizzate nel piano
+              (altri ricavi e proventi, variazioni rimanenze prodotti, proventi/oneri straordinari e
+              finanziari diversi dagli oneri, rettifiche).{" "}
+            </span>
+          )}
+          {baseline.prevLabel0
+            ? `Flusso di cassa anno 0 calcolato rispetto a ${baseline.prevLabel0}.`
+            : "Flusso di cassa anno 0 non disponibile: serve una situazione dell'esercizio precedente."}
+        </div>
         <div className="overflow-x-auto mb-6">
           <table className="w-full border-collapse text-[13px]">
             <thead>
@@ -319,20 +343,20 @@ export default function BusinessPlanTab() {
             </thead>
             <tbody>
               <BpRow label="Ricavi" values={[baseline.ricavi0, ...selectedRows.map((r) => r.ricavi)]} fmt={fmtEur} />
-              <BpRow label="Costi variabili" values={[NaN, ...selectedRows.map((r) => r.cv)]} fmt={fmtEur} kind="sub" />
-              <BpRow label="Margine di Contribuzione" values={[NaN, ...selectedRows.map((r) => r.margineContrib)]} fmt={fmtEur} kind="tot" />
+              <BpRow label="Costi variabili" values={[baseline.cv0, ...selectedRows.map((r) => r.cv)]} fmt={fmtEur} kind="sub" />
+              <BpRow label="Margine di Contribuzione" values={[baseline.mdc0, ...selectedRows.map((r) => r.margineContrib)]} fmt={fmtEur} kind="tot" />
               <BpRow label="Costo personale" values={[baseline.costoPersonale0, ...selectedRows.map((r) => r.costoPersonale)]} fmt={fmtEur} kind="sub" />
               <BpRow label="Altri costi fissi" values={[baseline.altriCostiFissi0, ...selectedRows.map((r) => r.altriFissi)]} fmt={fmtEur} kind="sub" />
-              <BpRow label="EBITDA" values={[NaN, ...selectedRows.map((r) => r.ebitda)]} fmt={fmtEur} kind="tot" />
+              <BpRow label="EBITDA" values={[baseline.ebitda0, ...selectedRows.map((r) => r.ebitda)]} fmt={fmtEur} kind="tot" />
               <BpRow label="Ammortamenti" values={[baseline.ammortamenti0, ...selectedRows.map((r) => r.ammortamenti)]} fmt={fmtEur} kind="sub" />
-              <BpRow label="EBIT" values={[NaN, ...selectedRows.map((r) => r.ebit)]} fmt={fmtEur} kind="tot" />
+              <BpRow label="EBIT" values={[baseline.ebit0, ...selectedRows.map((r) => r.ebit)]} fmt={fmtEur} kind="tot" />
               <BpRow label="Oneri finanziari" values={[baseline.oneriFin0, ...selectedRows.map((r) => r.oneriFin)]} fmt={fmtEur} kind="sub" />
-              <BpRow label="EBT" values={[NaN, ...selectedRows.map((r) => r.ebt)]} fmt={fmtEur} kind="tot" />
-              <BpRow label="Imposte" values={[NaN, ...selectedRows.map((r) => r.imposte)]} fmt={fmtEur} kind="sub" />
-              <BpRow label="UTILE NETTO" values={[NaN, ...selectedRows.map((r) => r.utileNetto)]} fmt={fmtEur} kind="tot" />
-              <BpRow label="EBITDA Margin %" values={[NaN, ...selectedRows.map((r) => r.ebitdaMargin)]} fmt={fmtPct} kind="sub" />
-              <BpRow label="ROE %" values={[NaN, ...selectedRows.map((r) => r.roe)]} fmt={fmtPct} kind="sub" />
-              <BpRow label="Flusso di cassa disponibile" values={[NaN, ...selectedRows.map((r) => r.flussoDisponibile)]} fmt={fmtEur} kind="sub" />
+              <BpRow label="EBT" values={[baseline.ebt0, ...selectedRows.map((r) => r.ebt)]} fmt={fmtEur} kind="tot" />
+              <BpRow label="Imposte" values={[baseline.imposte0, ...selectedRows.map((r) => r.imposte)]} fmt={fmtEur} kind="sub" />
+              <BpRow label="UTILE NETTO" values={[baseline.utile0, ...selectedRows.map((r) => r.utileNetto)]} fmt={fmtEur} kind="tot" />
+              <BpRow label="EBITDA Margin %" values={[baseline.ebitdaMargin0, ...selectedRows.map((r) => r.ebitdaMargin)]} fmt={fmtPct} kind="sub" />
+              <BpRow label="ROE %" values={[baseline.roe0, ...selectedRows.map((r) => r.roe)]} fmt={fmtPct} kind="sub" />
+              <BpRow label="Flusso di cassa disponibile" values={[baseline.flusso0, ...selectedRows.map((r) => r.flussoDisponibile)]} fmt={fmtEur} kind="sub" />
             </tbody>
           </table>
         </div>
@@ -350,9 +374,11 @@ export default function BusinessPlanTab() {
           (la riduce, se negativo), mentre i debiti finanziari lordi restano invariati rispetto al periodo di
           partenza — di conseguenza la Posizione Finanziaria Netta migliora (o peggiora) di pari passo con la
           liquidità generata. Crediti, rimanenze e debiti verso fornitori sono stimati dai giorni medi
-          (DSO/DPO/giacenza) impostati nello scenario, a partire dai valori reali del periodo di partenza. Non
-          essendo un modello a tre prospetti pienamente articolato, può residuare un piccolo scostamento tra
-          Totale Impieghi e Totale Fonti, riportato in modo esplicito come nel Rendiconto Finanziario storico.
+          (DSO/DPO/giacenza) impostati nello scenario, a partire dai valori reali del periodo di partenza. Le
+          altre attività e passività del periodo di partenza (altri crediti, ratei e risconti, fondi, TFR, altri
+          debiti) sono mantenute costanti; gli ammortamenti non possono superare il valore netto delle
+          immobilizzazioni. In questo modo Totale Impieghi e Totale Fonti quadrano in ogni anno (un residuo
+          diverso da zero indica uno sbilancio già presente nel bilancio storico importato).
         </div>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-[13px]">
@@ -380,9 +406,19 @@ export default function BusinessPlanTab() {
               <BpRow label="Rimanenze" values={[baseline.rimanenzeSp0, ...selectedRows.map((r) => r.rimanenze)]} fmt={fmtEur} kind="sub" />
               <BpRow label="Immobilizzazioni nette" values={[baseline.immobilizzazioni0, ...selectedRows.map((r) => r.immobilizzazioniNette)]} fmt={fmtEur} kind="sub" />
               <BpRow
+                label="Altre attività (altri crediti, ratei, att. finanziarie)"
+                values={[baseline.altreAttivita0, ...selectedRows.map((r) => r.altreAttivita)]}
+                fmt={fmtEur}
+                kind="sub"
+              />
+              <BpRow
                 label="TOTALE IMPIEGHI"
                 values={[
-                  baseline.liq0 + baseline.creditiComm0 + baseline.rimanenzeSp0 + baseline.immobilizzazioni0,
+                  baseline.liq0 +
+                    baseline.creditiComm0 +
+                    baseline.rimanenzeSp0 +
+                    baseline.immobilizzazioni0 +
+                    baseline.altreAttivita0,
                   ...selectedRows.map((r) => r.totaleImpieghi),
                 ]}
                 fmt={fmtEur}
@@ -397,9 +433,15 @@ export default function BusinessPlanTab() {
               />
               <BpRow label="Patrimonio Netto" values={[baseline.pn0, ...selectedRows.map((r) => r.pn)]} fmt={fmtEur} kind="sub" />
               <BpRow
+                label="Altre passività (fondi, TFR, altri debiti, ratei)"
+                values={[baseline.altrePassivita0, ...selectedRows.map((r) => r.altrePassivita)]}
+                fmt={fmtEur}
+                kind="sub"
+              />
+              <BpRow
                 label="TOTALE FONTI"
                 values={[
-                  baseline.debitiForn0 + (baseline.pfn0 + baseline.liq0) + baseline.pn0,
+                  baseline.debitiForn0 + (baseline.pfn0 + baseline.liq0) + baseline.pn0 + baseline.altrePassivita0,
                   ...selectedRows.map((r) => r.totaleFonti),
                 ]}
                 fmt={fmtEur}
@@ -412,8 +454,9 @@ export default function BusinessPlanTab() {
                   baseline.liq0 +
                     baseline.creditiComm0 +
                     baseline.rimanenzeSp0 +
-                    baseline.immobilizzazioni0 -
-                    (baseline.debitiForn0 + (baseline.pfn0 + baseline.liq0) + baseline.pn0),
+                    baseline.immobilizzazioni0 +
+                    baseline.altreAttivita0 -
+                    (baseline.debitiForn0 + (baseline.pfn0 + baseline.liq0) + baseline.pn0 + baseline.altrePassivita0),
                   ...selectedRows.map((r) => r.quadratura),
                 ]}
                 fmt={fmtEur}

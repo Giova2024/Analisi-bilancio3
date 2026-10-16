@@ -9,23 +9,11 @@ import {
   SP_VARIANCE_ROWS,
   epsilonForFormat,
   esitoFor,
-  type Esito,
   type VarianceRow,
 } from "@/lib/compute/variance";
 import { buildRatioGroups, type RatiosResult } from "@/lib/compute/ratios";
 import { fmt0, fmtDays, fmtEur, fmtPct, fmtRatio, fmtX } from "@/lib/numberFormat";
 import type { PeriodCalc, RatioValue } from "@/lib/types";
-
-const ESITO_LABEL: Record<Esito, string> = {
-  favorevole: "Favorevole",
-  sfavorevole: "Sfavorevole",
-  invariato: "Invariato",
-};
-const ESITO_CLASS: Record<Esito, string> = {
-  favorevole: "bg-green-bg text-green",
-  sfavorevole: "bg-red-bg text-red",
-  invariato: "bg-panel-2 text-text-3",
-};
 
 function fmtDeltaEur(v: number): string {
   if (!isFinite(v)) return "—";
@@ -43,15 +31,6 @@ function rowBg(kind?: VarianceRow["kind"]): string {
 }
 function labelPad(kind?: VarianceRow["kind"]): string {
   return kind === "sub" ? "pl-6 text-text-2 font-normal" : "";
-}
-
-function EsitoBadge({ esito }: { esito: Esito | null }) {
-  if (!esito) return <span className="text-text-3">—</span>;
-  return (
-    <span className={clsx("text-[10.5px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap", ESITO_CLASS[esito])}>
-      {ESITO_LABEL[esito]}
-    </span>
-  );
 }
 
 function VarianceTable({
@@ -126,7 +105,6 @@ function VarianceTable({
               <th className="text-right py-2 px-2.5 text-[11.5px] uppercase tracking-wide text-text-3 border-b-2 border-border whitespace-nowrap">Periodo B</th>
               <th className="text-right py-2 px-2.5 text-[11.5px] uppercase tracking-wide text-text-3 border-b-2 border-border whitespace-nowrap">Scostamento €</th>
               <th className="text-right py-2 px-2.5 text-[11.5px] uppercase tracking-wide text-text-3 border-b-2 border-border whitespace-nowrap">Scostamento %</th>
-              <th className="text-right py-2 px-2.5 text-[11.5px] uppercase tracking-wide text-text-3 border-b-2 border-border whitespace-nowrap">Esito</th>
             </tr>
           </thead>
           <tbody>
@@ -163,13 +141,10 @@ function VarianceTable({
                     <td className={clsx("py-1.5 px-2.5 text-right font-mono whitespace-nowrap tabular-nums", deltaColor)}>
                       {fmtDeltaPct(deltaPct)}
                     </td>
-                    <td className="py-1.5 px-2.5 text-right">
-                      <EsitoBadge esito={esito} />
-                    </td>
                   </tr>
                   {row.getItems && isOpen && (
                     <tr>
-                      <td colSpan={6} className="bg-panel-2 py-2.5 px-3.5">
+                      <td colSpan={5} className="bg-panel-2 py-2.5 px-3.5">
                         <DetailTable row={row} calcA={calcA} calcB={calcB} labelA={labelA} labelB={labelB} />
                       </td>
                     </tr>
@@ -279,7 +254,6 @@ function RatioVarianceTable({ ratiosA, ratiosB }: { ratiosA: RatiosResult; ratio
             <th className="text-right py-2 px-2.5 text-[11.5px] uppercase tracking-wide text-text-3 border-b-2 border-border whitespace-nowrap">Periodo A</th>
             <th className="text-right py-2 px-2.5 text-[11.5px] uppercase tracking-wide text-text-3 border-b-2 border-border whitespace-nowrap">Periodo B</th>
             <th className="text-right py-2 px-2.5 text-[11.5px] uppercase tracking-wide text-text-3 border-b-2 border-border whitespace-nowrap">Scostamento</th>
-            <th className="text-right py-2 px-2.5 text-[11.5px] uppercase tracking-wide text-text-3 border-b-2 border-border whitespace-nowrap">Esito</th>
           </tr>
         </thead>
         <tbody>
@@ -296,9 +270,6 @@ function RatioVarianceTable({ ratiosA, ratiosB }: { ratiosA: RatiosResult; ratio
                 <td className="py-1.5 px-2.5 text-right font-mono whitespace-nowrap tabular-nums">{formatRatioValue(rB)}</td>
                 <td className={clsx("py-1.5 px-2.5 text-right font-mono whitespace-nowrap tabular-nums", deltaColor)}>
                   {isFinite(delta) ? (delta > 0 ? "+" : "") + formatRatioValue({ ...rB, value: delta }) : "—"}
-                </td>
-                <td className="py-1.5 px-2.5 text-right">
-                  <EsitoBadge esito={esito} />
                 </td>
               </tr>
             );
@@ -341,8 +312,8 @@ export default function ScostamentiTab() {
             <div className="panel-title">Analisi degli Scostamenti</div>
             <div className="panel-desc mb-0">
               Confronta due periodi (es. anno corrente vs anno precedente, o consuntivo vs budget se
-              importato come periodo separato) ed evidenzia lo scostamento in valore assoluto, in
-              percentuale e il relativo esito (favorevole/sfavorevole rispetto al risultato economico).
+              importato come periodo separato) ed evidenzia lo scostamento in valore assoluto e in
+              percentuale.
             </div>
           </div>
           <div className="flex gap-2.5 items-end flex-wrap">

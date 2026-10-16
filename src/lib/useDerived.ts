@@ -7,7 +7,10 @@ import { computeRatios, type RatiosResult } from "./compute/ratios";
 import type { PeriodCalc, Periodo } from "./types";
 
 export interface Derived {
+  /** Periodi inclusi nelle analisi (ordinati per data). */
   periods: Periodo[];
+  /** Tutti i periodi, compresi quelli esclusi dall'utente. */
+  allPeriods: Periodo[];
   calcs: Record<string, PeriodCalc>;
   ratios: Record<string, RatiosResult>;
 }
@@ -28,6 +31,6 @@ export function useDerived(): Derived {
       calcs[p.id] = calc;
       ratios[p.id] = computeRatios(p, calc);
     }
-    return { periods: sorted, calcs, ratios };
+    return { periods: sorted.filter((p) => !p.excluded), allPeriods: sorted, calcs, ratios };
   }, [periods, overrides, varFixOverrides, manualEntries, excludedAccounts]);
 }

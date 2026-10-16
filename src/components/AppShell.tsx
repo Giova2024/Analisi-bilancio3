@@ -15,6 +15,7 @@ import KpiTab from "./tabs/KpiTab";
 import MappaturaTab from "./tabs/MappaturaTab";
 import RettificheTab from "./tabs/RettificheTab";
 import BusinessPlanTab from "./tabs/BusinessPlanTab";
+import RelazioneTab from "./tabs/RelazioneTab";
 
 export default function AppShell() {
   const [activeTab, setActiveTab] = useState<TabId>("import");
@@ -43,6 +44,8 @@ export default function AppShell() {
         {activeTab === "map" && <MappaturaTab />}
         {activeTab === "rett" && <RettificheTab />}
         {activeTab === "bp" && <BusinessPlanTab />}
+        {activeTab === "rel" && <RelazioneTab />}
+
       </main>
       <footer className="max-w-[1400px] mx-auto px-6 py-2.5 text-[11.5px] text-text-3 text-center no-print">
         Analisi di Bilancio — tutti i dati restano nel tuo browser.

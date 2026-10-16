@@ -23,21 +23,81 @@ export interface BPBaseline {
   rimanenzeSp0: number;
   immobilizzazioni0: number;
   debitiForn0: number;
+  /** Attività/passività non modellizzate (ratei, altri crediti/debiti…), mantenute costanti. */
+  altreAttivita0: number;
+  altrePassivita0: number;
+  // Anno 0 riclassificato con lo stesso schema delle proiezioni
+  cv0: number;
+  mdc0: number;
+  ebitda0: number;
+  ebit0: number;
+  ebt0: number;
+  imposte0: number;
+  utile0: number;
+  /** Utile netto effettivo di bilancio (può differire da utile0 per voci non modellizzate). */
+  utileBilancio0: number;
+  ebitdaMargin0: number;
+  roe0: number;
+  /** Etichetta del periodo dell'esercizio precedente usato per il flusso di cassa dell'Anno 0. */
+  prevLabel0: string | null;
+  flusso0: number;
 }
 
-export function computeBPBaseline(period: Periodo, calc: PeriodCalc, ratios: RatiosResult): BPBaseline {
+/** Crediti commerciali + rimanenze − debiti verso fornitori. */
+function ccnOperativo(calc: PeriodCalc): number {
+  const { ce, sp } = calc;
+  const crediti = ce.creditiCommercialiKeyword > 0 ? ce.creditiCommercialiKeyword : sp.creditiBreve.total;
+  const debiti = ce.debitiCommercialiKeyword > 0 ? ce.debitiCommercialiKeyword : sp.debitiFornitori.total;
+  return crediti + sp.rimanenze.total - debiti;
+}
+
+export function computeBPBaseline(
+  period: Periodo,
+  calc: PeriodCalc,
+  ratios: RatiosResult,
+  prev: { label: string; calc: PeriodCalc } | null = null
+): BPBaseline {
   const { ce, cm, sp } = calc;
   const incidenzaCV = ce.ricaviVendite.total ? (cm.totaleCV / ce.ricaviVendite.total) * 100 : 20;
   const aliquotaStorica = ce.ebt > 0 ? (ce.imposte.total / ce.ebt) * 100 : 28;
 
+  const ricavi0 = ce.ricaviVendite.total;
+  const costoPersonale0 = cm.cfPersonale.total;
+  // Gli ammortamenti sono proiettati separatamente: vanno esclusi dagli altri costi fissi.
+  const altriCostiFissi0 = Math.max(0, cm.totaleCF - cm.cfPersonale.total - cm.cfAmmortamenti.total);
+  const ammortamenti0 = ce.ammortamenti.total;
+  const oneriFin0 = ce.oneriFinanziari || 0;
+  const liq0 = sp.liqImmediate.total;
+  const creditiComm0 = ce.creditiCommercialiKeyword > 0 ? ce.creditiCommercialiKeyword : sp.creditiBreve.total;
+  const rimanenzeSp0 = sp.rimanenze.total;
+  const immobilizzazioni0 = sp.immobilizzazioni.total;
+  const debitiForn0 = ce.debitiCommercialiKeyword > 0 ? ce.debitiCommercialiKeyword : sp.debitiFornitori.total;
+  const pn0 = sp.patrimonioNetto.total;
+  const pfn0 = sp.pfn;
+
+  const cv0 = cm.totaleCV;
+  const mdc0 = ricavi0 - cv0;
+  const ebitda0 = mdc0 - costoPersonale0 - altriCostiFissi0;
+  const ebit0 = ebitda0 - ammortamenti0;
+  const ebt0 = ebit0 - oneriFin0;
+  const imposte0 = ce.imposte.total;
+  const utile0 = ebt0 - imposte0;
+
+  let flusso0 = NaN;
+  if (prev) {
+    const capexNetti = immobilizzazioni0 - prev.calc.sp.immobilizzazioni.total + ammortamenti0;
+    const deltaCcn = creditiComm0 + rimanenzeSp0 - debitiForn0 - ccnOperativo(prev.calc);
+    flusso0 = utile0 + ammortamenti0 - deltaCcn - capexNetti;
+  }
+
   return {
-    ricavi0: ce.ricaviVendite.total,
-    costoPersonale0: cm.cfPersonale.total,
-    altriCostiFissi0: Math.max(0, cm.totaleCF - cm.cfPersonale.total),
-    ammortamenti0: ce.ammortamenti.total,
-    oneriFin0: ce.oneriFinanziari || 0,
-    pn0: sp.patrimonioNetto.total,
-    pfn0: sp.pfn,
+    ricavi0,
+    costoPersonale0,
+    altriCostiFissi0,
+    ammortamenti0,
+    oneriFin0,
+    pn0,
+    pfn0,
     incidenzaCVStorica: round1(incidenzaCV),
     aliquotaStorica: round1(clamp(aliquotaStorica, 0, 60) || 28),
     dsoStorico: isFinite(ratios.dso) ? Math.round(ratios.dso) : 30,
@@ -45,11 +105,25 @@ export function computeBPBaseline(period: Periodo, calc: PeriodCalc, ratios: Rat
     giacenzaStorica: isFinite(ratios.dmag) ? Math.round(ratios.dmag) : 30,
     periodLabel: period.label,
     periodDate: period.date,
-    liq0: sp.liqImmediate.total,
-    creditiComm0: ce.creditiCommercialiKeyword > 0 ? ce.creditiCommercialiKeyword : sp.creditiBreve.total,
-    rimanenzeSp0: sp.rimanenze.total,
-    immobilizzazioni0: sp.immobilizzazioni.total,
-    debitiForn0: ce.debitiCommercialiKeyword > 0 ? ce.debitiCommercialiKeyword : sp.debitiFornitori.total,
+    liq0,
+    creditiComm0,
+    rimanenzeSp0,
+    immobilizzazioni0,
+    debitiForn0,
+    altreAttivita0: (sp.totaleImpieghi || 0) - (liq0 + creditiComm0 + rimanenzeSp0 + immobilizzazioni0),
+    altrePassivita0: (sp.totaleFonti || 0) - (debitiForn0 + (pfn0 + liq0) + pn0),
+    cv0,
+    mdc0,
+    ebitda0,
+    ebit0,
+    ebt0,
+    imposte0,
+    utile0,
+    utileBilancio0: ce.utileNetto,
+    ebitdaMargin0: ricavi0 ? ebitda0 / ricavi0 : NaN,
+    roe0: pn0 ? utile0 / pn0 : NaN,
+    prevLabel0: prev ? prev.label : null,
+    flusso0,
   };
 }
 
@@ -120,6 +194,8 @@ export interface BPYearRow {
   rimanenze: number;
   debitiFornitori: number;
   immobilizzazioniNette: number;
+  altreAttivita: number;
+  altrePassivita: number;
   liquidita: number;
   debitiFinanziari: number;
   totaleImpieghi: number;
@@ -154,7 +230,10 @@ export function projectScenario(baseline: BPBaseline, assum: Assumptions, years:
     const costiFissi = costoPersonale + altriFissi;
     const ebitda = margineContrib - costiFissi;
     ammortamenti *= 1 + assum.varAmmortamenti / 100;
-    const ebit = ebitda - ammortamenti;
+    const capex = assum.capex || 0;
+    // Non si può ammortizzare più del valore residuo delle immobilizzazioni (+ nuovi investimenti).
+    const ammEffettivi = Math.max(0, Math.min(ammortamenti, immobilizzazioniNette + capex));
+    const ebit = ebitda - ammEffettivi;
     oneriFin = Math.max(0, oneriFin * (1 + assum.varOneriFin / 100));
     const ebt = ebit - oneriFin;
     const imposte = Math.max(0, ebt) * (assum.aliquota / 100);
@@ -167,8 +246,7 @@ export function projectScenario(baseline: BPBaseline, assum: Assumptions, years:
     const deltaCCN = ccn - ccnPrev;
     ccnPrev = ccn;
 
-    const flussoOperativo = utileNetto + ammortamenti - deltaCCN;
-    const capex = assum.capex || 0;
+    const flussoOperativo = utileNetto + ammEffettivi - deltaCCN;
     const flussoDisponibile = flussoOperativo - capex;
     // Il flusso di cassa disponibile di ciascun anno si accumula (o si riduce, se negativo)
     // nella liquidità: prima era mantenuta costante per errore, dando l'impressione che la
@@ -177,11 +255,13 @@ export function projectScenario(baseline: BPBaseline, assum: Assumptions, years:
     liquidita = liquidita + flussoDisponibile;
     pfn = pfn - flussoDisponibile;
     pn = pn + utileNetto;
-    immobilizzazioniNette = Math.max(0, immobilizzazioniNette + capex - ammortamenti);
+    immobilizzazioniNette = immobilizzazioniNette + capex - ammEffettivi;
 
+    const altreAttivita = baseline.altreAttivita0 || 0;
+    const altrePassivita = baseline.altrePassivita0 || 0;
     const debitiFinanziari = pfn + liquidita;
-    const totaleImpieghi = liquidita + crediti + rimanenze + immobilizzazioniNette;
-    const totaleFonti = debiti + debitiFinanziari + pn;
+    const totaleImpieghi = liquidita + crediti + rimanenze + immobilizzazioniNette + altreAttivita;
+    const totaleFonti = debiti + debitiFinanziari + pn + altrePassivita;
     const quadratura = totaleImpieghi - totaleFonti;
 
     rows.push({
@@ -193,7 +273,7 @@ export function projectScenario(baseline: BPBaseline, assum: Assumptions, years:
       altriFissi,
       costiFissi,
       ebitda,
-      ammortamenti,
+      ammortamenti: ammEffettivi,
       ebit,
       oneriFin,
       ebt,
@@ -213,6 +293,8 @@ export function projectScenario(baseline: BPBaseline, assum: Assumptions, years:
       rimanenze,
       debitiFornitori: debiti,
       immobilizzazioniNette,
+      altreAttivita,
+      altrePassivita,
       liquidita,
       debitiFinanziari,
       totaleImpieghi,

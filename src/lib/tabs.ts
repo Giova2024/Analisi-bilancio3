@@ -1,5 +1,5 @@
 export const TABS = [
-  { id: "import", label: "1 · Importazione", icon: "📥" },
+  { id: "import", label: "Importazione", icon: "📥" },
   { id: "sp", label: "Stato Patrimoniale", icon: "🏛" },
   { id: "ce", label: "Conto Economico", icon: "📈" },
   { id: "bep", label: "Break Even Point", icon: "⚖️" },
@@ -10,6 +10,7 @@ export const TABS = [
   { id: "map", label: "Mappatura Conti", icon: "🗂️" },
   { id: "rett", label: "Rettifiche Extracontabili", icon: "✏️" },
   { id: "bp", label: "Business Plan", icon: "🚀" },
+  { id: "rel", label: "Relazione", icon: "📝" },
 ] as const;
 
 export type TabId = (typeof TABS)[number]["id"];

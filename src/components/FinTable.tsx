@@ -3,7 +3,8 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { fmt0, fmtPct } from "@/lib/numberFormat";
-import type { ClassifiedAccount, PeriodCalc, Periodo } from "@/lib/types";
+import { useStore } from "@/lib/store";
+import type { ClassifiedAccount, PeriodCalc, Periodo, VarFix } from "@/lib/types";
 
 export interface FinRow {
   id: string;
@@ -19,6 +20,31 @@ interface Props {
   calcs: Record<string, PeriodCalc>;
   rows: FinRow[];
   showPct?: boolean;
+  /** Mostra nel dettaglio dei costi il selettore Variabile/Fisso (CE a margine di contribuzione). */
+  varFix?: boolean;
+}
+
+/** Righe del CE a margine di contribuzione i cui conti possono essere spostati tra variabili e fissi. */
+const VF_ROWS = new Set([
+  "cmAcquisto",
+  "cmRimIniziale",
+  "cmRimFinale",
+  "cvAltro",
+  "cfMerce",
+  "cfServizi",
+  "cfGodimento",
+  "cfPersonale",
+  "cfAmmortamenti",
+  "cfAccantonamenti",
+  "cfOneriDiversi",
+]);
+
+function clearVarFixOverride(code: string) {
+  useStore.setState((s) => {
+    const next = { ...s.varFixOverrides };
+    delete next[code];
+    return { varFixOverrides: next };
+  });
 }
 
 function rowClasses(kind?: FinRow["kind"]): string {
@@ -46,7 +72,7 @@ function labelPadding(kind?: FinRow["kind"]): string {
   return "";
 }
 
-export default function FinTable({ periods, calcs, rows, showPct = true }: Props) {
+export default function FinTable({ periods, calcs, rows, showPct = true, varFix = false }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   function toggle(id: string) {
@@ -175,7 +201,7 @@ export default function FinTable({ periods, calcs, rows, showPct = true }: Props
                   {row.getItems && isOpen && (
                     <tr>
                       <td colSpan={1 + periods.length * (showPct ? 2 : 1)} className="bg-panel-2 py-2.5 px-3.5">
-                        <DetailTable periods={periods} calcs={calcs} row={row} />
+                        <DetailTable periods={periods} calcs={calcs} row={row} varFix={varFix} />
                       </td>
                     </tr>
                   )}
@@ -193,17 +219,23 @@ function DetailTable({
   periods,
   calcs,
   row,
+  varFix = false,
 }: {
   periods: Periodo[];
   calcs: Record<string, PeriodCalc>;
   row: FinRow;
+  varFix?: boolean;
 }) {
+  const varFixOverrides = useStore((s) => s.varFixOverrides);
+  const setVarFixOverride = useStore((s) => s.setVarFixOverride);
   if (!row.getItems) return null;
+  const showVarFix = varFix && VF_ROWS.has(row.id);
   const perPeriodItems = periods.map((p) => row.getItems!(calcs[p.id]));
-  const codeMap = new Map<string, { desc: string; manual: boolean }>();
+  const codeMap = new Map<string, { desc: string; manual: boolean; varFix: VarFix }>();
   perPeriodItems.forEach((items) => {
     items.forEach((it) => {
-      if (!codeMap.has(it.conto)) codeMap.set(it.conto, { desc: it.desc, manual: !!it.manual });
+      if (!codeMap.has(it.conto))
+        codeMap.set(it.conto, { desc: it.desc, manual: !!it.manual, varFix: it.varFix });
     });
   });
   const codes = Array.from(codeMap.keys()).sort((a, b) =>
@@ -224,6 +256,14 @@ function DetailTable({
           <th className="text-left py-1 px-2 text-[10.5px] uppercase tracking-wide text-text-3 border-b border-border-2">
             Descrizione
           </th>
+          {showVarFix && (
+            <th
+              className="text-center py-1 px-2 text-[10.5px] uppercase tracking-wide text-text-3 border-b border-border-2 whitespace-nowrap no-print"
+              title="Classificazione del costo: Variabile o Fisso"
+            >
+              Var / Fisso
+            </th>
+          )}
           {periods.map((p) => (
             <th
               key={p.id}
@@ -237,6 +277,7 @@ function DetailTable({
       <tbody>
         {codes.map((code) => {
           const meta = codeMap.get(code)!;
+          const overridden = varFixOverrides[code];
           return (
             <tr key={code} className={clsx(meta.manual && "bg-amber-bg")}>
               <td className="py-1 px-2 font-mono text-text-3 whitespace-nowrap">{code}</td>
@@ -248,6 +289,49 @@ function DetailTable({
                   </span>
                 )}
               </td>
+              {showVarFix && (
+                <td className="py-1 px-2 text-center whitespace-nowrap no-print">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="inline-flex bg-panel-2 border border-border rounded-md p-[2px]">
+                      {(
+                        [
+                          ["V", "Variabile"],
+                          ["F", "Fisso"],
+                        ] as const
+                      ).map(([k, title]) => (
+                        <button
+                          key={k}
+                          type="button"
+                          title={title}
+                          className={clsx(
+                            "px-2 py-0.5 rounded text-[11px] font-bold border border-transparent",
+                            meta.varFix === k
+                              ? "bg-panel text-accent-2 border-border shadow-sm"
+                              : "text-text-3 hover:text-accent"
+                          )}
+                          onClick={() => {
+                            if (meta.varFix !== k) setVarFixOverride(code, k);
+                          }}
+                        >
+                          {k}
+                        </button>
+                      ))}
+                    </span>
+                    {overridden ? (
+                      <button
+                        type="button"
+                        title="Modificato manualmente — clicca per ripristinare la classificazione predefinita"
+                        className="text-[11px] text-[#92400e] hover:text-accent px-1"
+                        onClick={() => clearVarFixOverride(code)}
+                      >
+                        ↺
+                      </button>
+                    ) : (
+                      <span className="inline-block w-[18px]" />
+                    )}
+                  </span>
+                </td>
+              )}
               {perPeriodItems.map((items, idx) => {
                 const acc = items.find((a) => a.conto === code);
                 return (

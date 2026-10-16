@@ -43,9 +43,16 @@ export default function PeriodModal({ filename, accounts, onConfirm, onCancel }:
     <div className="fixed inset-0 bg-[rgba(15,23,42,.5)] flex items-center justify-center z-[100] p-5">
       <div className="bg-panel rounded-2xl p-6 max-w-[520px] w-full max-h-[88vh] overflow-auto shadow-2xl">
         <h3 className="text-base font-bold mb-3.5">Configura periodo</h3>
-        <p className="text-xs text-text-3 mb-3">
-          {filename} — {accounts.length} conti importati
-        </p>
+        {accounts.length === 0 ? (
+          <p className="text-xs text-text-3 mb-3">
+            Periodo vuoto, senza conti importati: potrai inserirne i saldi dalla scheda Rettifiche
+            Extracontabili.
+          </p>
+        ) : (
+          <p className="text-xs text-text-3 mb-3">
+            {filename} — {accounts.length} conti importati
+          </p>
+        )}
         <div className="field mb-3">
           <label>Etichetta periodo</label>
           <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} />

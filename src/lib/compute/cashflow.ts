@@ -1,24 +1,45 @@
-import type { Periodo, PeriodCalc } from "../types";
+import type { Periodo, PeriodCalc, SP } from "../types";
 
 export interface CashFlowResult {
   sameFY: boolean;
   utileFlusso: number;
+  /** Ammortamenti del periodo (solo la quota maturata tra p0 e p1 se stesso esercizio). */
+  amm: number;
   dRim: number;
   dCredOp: number;
   dRateiAtt: number;
   dDebOp: number;
   dRateiPass: number;
+  /** Δ fondi rischi e oneri + TFR. */
+  dFondi: number;
+  /** Δ debiti non finanziari oltre 12 mesi. */
+  dDebOpOltre: number;
+  dAltroPass: number;
   flussoOperativo: number;
   dImmob: number;
+  dAttFin: number;
   flussoInvestimenti: number;
   dDebFin: number;
   dPN: number;
+  /** Risultato dell'esercizio precedente stornato dalla gestione finanziaria (esercizi diversi). */
+  utilePrec: number;
   flussoFinanziamento: number;
   totale: number;
   deltaCassaReale: number;
   residuo: number;
+  quad0: number;
+  quad1: number;
 }
 
+type BucketKey = {
+  [K in keyof SP]: SP[K] extends { total: number } ? K : never;
+}[keyof SP];
+
+/**
+ * Rendiconto finanziario indiretto per differenza tra due Stati Patrimoniali. Tutte le voci
+ * patrimoniali vengono considerate, quindi il totale coincide con la variazione di cassa a meno
+ * degli sbilanci (quadratura) delle situazioni importate.
+ */
 export function computeCashFlow(
   p0: Periodo,
   calc0: PeriodCalc,
@@ -27,49 +48,67 @@ export function computeCashFlow(
 ): CashFlowResult {
   const sp0 = calc0.sp;
   const sp1 = calc1.sp;
-  const ce1 = calc1.ce;
-
   const sameFY = p0.fyStart === p1.fyStart;
-  const utileFlusso = sameFY ? ce1.utileNetto - calc0.ce.utileNetto : ce1.utileNetto;
+  const d = (k: BucketKey) => sp1[k].total - sp0[k].total;
 
-  const dCredOp = sp1.creditiBreve.total - sp0.creditiBreve.total;
-  const dRim = sp1.rimanenze.total - sp0.rimanenze.total;
-  const dRateiAtt = sp1.rateiRiscAttivi.total - sp0.rateiRiscAttivi.total;
-  const debOp0 = sp0.debitiBreve.total - sp0.debitiFinBreve.total;
-  const debOp1 = sp1.debitiBreve.total - sp1.debitiFinBreve.total;
-  const dDebOp = debOp1 - debOp0;
-  const dRateiPass = sp1.rateiRiscPassivi.total - sp0.rateiRiscPassivi.total;
+  const utileFlusso = sameFY
+    ? sp1.risultatoPeriodo.total - sp0.risultatoPeriodo.total
+    : sp1.risultatoPeriodo.total;
+  const amm = sameFY
+    ? calc1.ce.ammortamenti.total - calc0.ce.ammortamenti.total
+    : calc1.ce.ammortamenti.total;
+
+  const dRim = d("rimanenze");
+  const dCredOp = d("creditiBreve");
+  const dRateiAtt = d("rateiRiscAttivi");
+  const dDebOp = d("debitiBreve") - d("debitiFinBreve");
+  const dRateiPass = d("rateiRiscPassivi");
+  const dFondi = d("fondiRischi") + d("tfr");
+  const dDebOpOltre = d("debitiOltre") - d("debitiFinOltre");
+  const dAltroPass = d("altroPassivo");
 
   const flussoOperativo =
-    utileFlusso + ce1.ammortamenti.total - dRim - dCredOp - dRateiAtt + dDebOp + dRateiPass;
+    utileFlusso + amm - dRim - dCredOp - dRateiAtt + dDebOp + dRateiPass + dFondi + dDebOpOltre + dAltroPass;
 
-  const dImmob = sp1.immobilizzazioni.total - sp0.immobilizzazioni.total;
-  const flussoInvestimenti = -(dImmob + ce1.ammortamenti.total);
+  const dImmob = d("immobilizzazioni");
+  const dAttFin = d("attFinNonImmob");
+  const flussoInvestimenti = -(dImmob + amm) - dAttFin;
 
-  const dDebFin = sp1.debitiFinTot.total - sp0.debitiFinTot.total;
-  const dPN = sp1.patrimonioNettoBase.total - sp0.patrimonioNettoBase.total;
-  const flussoFinanziamento = dDebFin + dPN;
+  const dDebFin = d("debitiFinTot");
+  const dPN = d("patrimonioNettoBase");
+  // Tra esercizi diversi il risultato precedente confluisce nel PN (riserve) o viene distribuito:
+  // lo si storna così che la Δ PN rifletta solo i movimenti monetari (apporti, dividendi).
+  const utilePrec = sameFY ? 0 : sp0.risultatoPeriodo.total;
+  const flussoFinanziamento = dDebFin + dPN - utilePrec;
 
   const totale = flussoOperativo + flussoInvestimenti + flussoFinanziamento;
-  const deltaCassaReale = sp1.liqImmediate.total - sp0.liqImmediate.total;
+  const deltaCassaReale = d("liqImmediate");
   const residuo = deltaCassaReale - totale;
 
   return {
     sameFY,
     utileFlusso,
+    amm,
     dRim,
     dCredOp,
     dRateiAtt,
     dDebOp,
     dRateiPass,
+    dFondi,
+    dDebOpOltre,
+    dAltroPass,
     flussoOperativo,
     dImmob,
+    dAttFin,
     flussoInvestimenti,
     dDebFin,
     dPN,
+    utilePrec,
     flussoFinanziamento,
     totale,
     deltaCassaReale,
     residuo,
+    quad0: sp0.quadratura,
+    quad1: sp1.quadratura,
   };
 }
