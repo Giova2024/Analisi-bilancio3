@@ -40,8 +40,8 @@ export default function PeriodModal({ filename, accounts, onConfirm, onCancel }:
   }
 
   return (
-    <div className="fixed inset-0 bg-[rgba(15,23,42,.5)] flex items-center justify-center z-[100] p-5">
-      <div className="bg-panel rounded-2xl p-6 max-w-[520px] w-full max-h-[88vh] overflow-auto shadow-2xl">
+    <div className="fixed inset-0 bg-[rgba(15,23,42,.5)] flex items-center justify-center z-[100] p-3 sm:p-5">
+      <div className="bg-panel rounded-2xl p-4 sm:p-6 max-w-[520px] w-full max-h-[88vh] overflow-auto shadow-2xl">
         <h3 className="text-base font-bold mb-3.5">Configura periodo</h3>
         {accounts.length === 0 ? (
           <p className="text-xs text-text-3 mb-3">
@@ -57,7 +57,7 @@ export default function PeriodModal({ filename, accounts, onConfirm, onCancel }:
           <label>Etichetta periodo</label>
           <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} />
         </div>
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <div className="field">
             <label>Data di riferimento</label>
             <input type="date" value={date} onChange={(e) => updateDates(e.target.value, fyStart)} />

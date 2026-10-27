@@ -29,9 +29,9 @@ function KpiCard({
           ? "border-[#fecaca] bg-red-bg"
           : "border-border bg-panel-2";
   return (
-    <div className={clsx("border rounded-xl p-4", bg)}>
-      <div className="text-[11.5px] text-text-3 font-bold uppercase tracking-wide">{label}</div>
-      <div className="text-[26px] font-extrabold mt-1 font-mono">{value}</div>
+    <div className={clsx("border rounded-xl p-2.5 sm:p-4 min-w-0", bg)}>
+      <div className="text-[10.5px] sm:text-[11.5px] text-text-3 font-bold uppercase tracking-wide">{label}</div>
+      <div className="text-[17px] sm:text-[26px] font-extrabold mt-1 font-mono break-words">{value}</div>
       {trend && (
         <div className={clsx("text-xs mt-1 font-semibold", trend.good ? "text-green" : "text-red")}>
           {trend.text}
@@ -94,7 +94,7 @@ export default function KpiTab() {
           periodi.
         </div>
 
-        <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
+        <div className="grid gap-2 sm:gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 45%), 1fr))" }}>
           <KpiCard
             label="Ricavi delle vendite"
             value={fmtEur(cLast.ce.ricaviVendite.total)}
@@ -148,7 +148,7 @@ export default function KpiTab() {
         </div>
 
         {periods.length > 0 && (
-          <div className="grid gap-4 mt-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))" }}>
+          <div className="grid gap-4 mt-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(420px, 100%), 1fr))" }}>
             <div className="border border-border rounded-[10px] p-3.5">
               <div className="text-[12.5px] font-bold text-text-2 mb-1">Ricavi, EBITDA, Utile Netto</div>
               {mixedDurations && (

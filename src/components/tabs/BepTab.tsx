@@ -30,7 +30,7 @@ export default function BepTab() {
         ) : (
           <div
             className="grid gap-4 mt-3.5"
-            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}
+            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))" }}
           >
             {periods.map((p) => {
               const input = bepInputs[p.id] || { prezzo: null, costoVar: null };

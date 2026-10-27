@@ -5,16 +5,20 @@ export function CompanyInput() {
   const name = useStore((s) => s.companyName) || "";
   const setName = useStore((s) => s.setCompanyName);
   return (
-    <label className="no-print flex items-center gap-1.5 ml-3 text-[12.5px] font-semibold text-text-2">
-      Azienda:
+    <label className="no-print flex items-center gap-1.5 sm:ml-3 min-w-0 flex-1 sm:flex-none text-[12.5px] font-semibold text-text-2">
+      <span className="hidden sm:inline">Azienda:</span>
       <input
         type="text"
         value={name}
         placeholder="Nome dell'azienda"
         maxLength={120}
+        aria-label="Azienda"
         onChange={(e) => setName(e.target.value)}
         style={{
           width: 200,
+          maxWidth: "100%",
+          minWidth: 0,
+          flex: "1 1 auto",
           fontWeight: 600,
           fontSize: 13,
           padding: "4px 8px",

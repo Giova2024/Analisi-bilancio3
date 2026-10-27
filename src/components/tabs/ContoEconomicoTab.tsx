@@ -61,7 +61,7 @@ export default function ContoEconomicoTab() {
         ) : (
           <>
             {view === "cm" && (
-              <div className="grid gap-2.5 my-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
+              <div className="grid gap-2.5 my-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))" }}>
                 {periods.map((p) => {
                   const cm = calcs[p.id].cm;
                   return (

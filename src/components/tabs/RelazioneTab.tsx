@@ -189,7 +189,7 @@ export default function RelazioneTab() {
           testo è modificabile direttamente nel riquadro sottostante, viene salvato nel browser (e nel file
           JSON) ed è esportabile in Word, HTML o PDF.
         </div>
-        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))" }}>
+        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(min(200px, 100%), 1fr))" }}>
           <Field label="Nome azienda">
             <input
               type="text"

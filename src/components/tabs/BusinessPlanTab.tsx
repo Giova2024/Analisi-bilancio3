@@ -218,7 +218,7 @@ export default function BusinessPlanTab() {
           </button>
         </div>
         {!collapsedAssumptions && (
-          <div className="grid gap-4 mt-2.5 mb-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
+          <div className="grid gap-4 mt-2.5 mb-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))" }}>
             {SCENARIOS.map((s) => {
               const assum = businessPlan.scenarios[s.key];
               const last = projections[s.key][projections[s.key].length - 1];
@@ -270,7 +270,7 @@ export default function BusinessPlanTab() {
           </button>
         </div>
         {!collapsedCharts && (
-          <div className="grid gap-4 mt-2.5 mb-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))" }}>
+          <div className="grid gap-4 mt-2.5 mb-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(420px, 100%), 1fr))" }}>
             <ChartBox title="Ricavi">
               <Line data={lineChart((r) => r.ricavi, baseline.ricavi0)} options={chartOpts} />
             </ChartBox>

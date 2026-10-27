@@ -297,7 +297,7 @@ export default function ImportTab() {
               </span>
             )}
           </div>
-          <div className="grid gap-3 mt-2.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))" }}>
+          <div className="grid gap-3 mt-2.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(230px, 100%), 1fr))" }}>
             {periods.map((p) => {
               const calc = calcs[p.id];
               const sbilancio = Math.abs(calc.sp.quadratura) > 1;

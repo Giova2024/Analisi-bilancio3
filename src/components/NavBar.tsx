@@ -147,8 +147,39 @@ export default function NavBar({ activeTab, onTabChange }: Props) {
     );
   }
   return (
-    <nav className="flex flex-wrap no-print" style={{ gap: 1 }}>
-      {items}
+    <>
+      <nav className="hidden md:flex flex-wrap no-print" style={{ gap: 1 }}>
+        {items}
+      </nav>
+      <MobileNav activeTab={activeTab} onTabChange={onTabChange} />
+    </>
+  );
+}
+
+/** Sul telefono la barra delle schede diventa un menu a tendina. */
+function MobileNav({ activeTab, onTabChange }: Props) {
+  const main = TABS.filter((t) => !SET_IDS.includes(t.id));
+  return (
+    <nav className="md:hidden no-print field">
+      <select
+        aria-label="Scheda"
+        value={activeTab}
+        onChange={(e) => onTabChange(e.target.value as TabId)}
+        style={{ fontWeight: 600, padding: "7px 10px", fontSize: 15 }}
+      >
+        {main.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.icon} {t.label}
+          </option>
+        ))}
+        <optgroup label="Impostazioni">
+          {SETTINGS.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.icon} {s.label}
+            </option>
+          ))}
+        </optgroup>
+      </select>
     </nav>
   );
 }

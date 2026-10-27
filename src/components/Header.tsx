@@ -77,14 +77,14 @@ export default function Header({ activeTab, onTabChange }: Props) {
 
   return (
     <header
-      className="sticky top-0 z-50 bg-panel/95 backdrop-blur border-b border-border px-6 py-3 shadow-sm"
+      className="md:sticky top-0 z-50 bg-panel/95 backdrop-blur border-b border-border px-3 sm:px-6 py-3 shadow-sm"
       style={{ paddingTop: 6, paddingBottom: 4 }}
     >
       <div
         className="flex items-center justify-between flex-wrap"
         style={{ marginBottom: 4, gap: "6px 16px" }}
       >
-        <div className="flex items-center gap-2.5 font-bold text-base">
+        <div className="flex items-center flex-wrap sm:flex-nowrap gap-2.5 font-bold text-base min-w-0 w-full sm:w-auto">
           <div
             className="w-[32px] h-[32px] rounded-xl bg-gradient-to-br from-accent via-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white text-[15px] flex-shrink-0"
             style={{ boxShadow: "0 2px 6px rgba(37,99,235,0.35)" }}
@@ -93,22 +93,30 @@ export default function Header({ activeTab, onTabChange }: Props) {
           </div>
           <div>
             Analisi di Bilancio
-            <div className="font-normal text-xs text-text-3">Riclassificazione, indici e KPI</div>
+            <div className="font-normal text-xs text-text-3 hidden sm:block">Riclassificazione, indici e KPI</div>
           </div>
           <CompanyInput />
         </div>
-        <div className="flex gap-2 flex-wrap no-print">
-          <button className="btn btn-sm" onClick={handlePrint}>
-            🖶 Stampa / PDF
+        <div className="flex gap-1.5 sm:gap-2 flex-wrap no-print">
+          <button className="btn btn-sm" onClick={handlePrint} title="Stampa / PDF" aria-label="Stampa / PDF">
+            <span aria-hidden="true">🖶</span>
+            <span className="sm:hidden"> Stampa</span>
+            <span className="hidden sm:inline"> Stampa / PDF</span>
           </button>
-          <button className="btn btn-sm" onClick={handleExportExcel}>
-            ⬇ Esporta Excel
+          <button className="btn btn-sm" onClick={handleExportExcel} title="Esporta Excel" aria-label="Esporta Excel">
+            <span aria-hidden="true">⬇</span>
+            <span className="sm:hidden"> Excel</span>
+            <span className="hidden sm:inline"> Esporta Excel</span>
           </button>
-          <button className="btn btn-sm" onClick={handleSaveJson}>
-            💾 Salva JSON
+          <button className="btn btn-sm" onClick={handleSaveJson} title="Salva JSON" aria-label="Salva JSON">
+            <span aria-hidden="true">💾</span>
+            <span className="sm:hidden"> Salva</span>
+            <span className="hidden sm:inline"> Salva JSON</span>
           </button>
-          <button className="btn btn-sm" onClick={handleLoadJsonClick}>
-            📂 Carica JSON
+          <button className="btn btn-sm" onClick={handleLoadJsonClick} title="Carica JSON" aria-label="Carica JSON">
+            <span aria-hidden="true">📂</span>
+            <span className="sm:hidden"> Carica</span>
+            <span className="hidden sm:inline"> Carica JSON</span>
           </button>
           <input
             ref={fileInputRef}
@@ -117,8 +125,10 @@ export default function Header({ activeTab, onTabChange }: Props) {
             className="hidden"
             onChange={handleLoadJsonFile}
           />
-          <button className="btn btn-sm btn-danger" onClick={handleReset}>
-            🗑 Azzera tutto
+          <button className="btn btn-sm btn-danger" onClick={handleReset} title="Azzera tutto" aria-label="Azzera tutto">
+            <span aria-hidden="true">🗑</span>
+            <span className="sm:hidden"> Azzera</span>
+            <span className="hidden sm:inline"> Azzera tutto</span>
           </button>
         </div>
       </div>

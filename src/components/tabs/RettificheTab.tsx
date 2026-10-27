@@ -283,7 +283,7 @@ function PeriodCard({
     <div className="border border-border rounded-[10px] mb-4 bg-panel-2">
       <button
         type="button"
-        className="w-full flex items-center gap-3 px-4 py-3 text-left cursor-pointer"
+        className="w-full flex items-center gap-3 px-2.5 sm:px-4 py-3 text-left cursor-pointer"
         onClick={onToggle}
         aria-expanded={open}
       >
@@ -310,7 +310,7 @@ function PeriodCard({
       </button>
 
       {open && (
-        <div className="px-4 pb-4 flex flex-col lg:flex-row gap-4 items-start">
+        <div className="px-2 sm:px-4 pb-4 flex flex-col lg:flex-row gap-4 items-start">
           <div className="flex-1 min-w-0 w-full overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>

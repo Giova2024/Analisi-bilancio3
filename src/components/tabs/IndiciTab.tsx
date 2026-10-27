@@ -102,7 +102,7 @@ export default function IndiciTab() {
         {groupsByPeriod[0].every((g) => hiddenGroups.has(g.title)) && (
           <div className="empty-state mt-2.5">Tutte le categorie sono nascoste. Riattivane almeno una qui sopra.</div>
         )}
-        <div className="grid gap-4 mt-2.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))" }}>
+        <div className="grid gap-4 mt-2.5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(340px, 100%), 1fr))" }}>
           {Array.from({ length: groupCount }).map((_, gi) => {
             const group = groupsByPeriod[0][gi];
             if (hiddenGroups.has(group.title)) return null;

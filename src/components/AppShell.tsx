@@ -32,7 +32,7 @@ export default function AppShell() {
   return (
     <>
       <Header activeTab={activeTab} onTabChange={setActiveTab} />
-      <main className="max-w-[1400px] mx-auto px-6 py-5 w-full flex-1">
+      <main className="max-w-[1400px] mx-auto px-3 sm:px-6 py-3 sm:py-5 w-full min-w-0 flex-1">
         {activeTab === "import" && <ImportTab />}
         {activeTab === "sp" && <StatoPatrimonialeTab />}
         {activeTab === "ce" && <ContoEconomicoTab />}
@@ -47,7 +47,7 @@ export default function AppShell() {
         {activeTab === "rel" && <RelazioneTab />}
 
       </main>
-      <footer className="max-w-[1400px] mx-auto px-6 py-2.5 text-[11.5px] text-text-3 text-center no-print">
+      <footer className="max-w-[1400px] mx-auto px-3 sm:px-6 py-2.5 text-[11.5px] text-text-3 text-center no-print">
         Analisi di Bilancio — tutti i dati restano nel tuo browser.
       </footer>
     </>
