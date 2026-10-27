@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import type {
   AppState,
   BepInput,
@@ -26,6 +26,28 @@ const initialState: AppState = {
   companyName: "",
   report: null,
 };
+
+/**
+ * localStorage se il browser lo consente, altrimenti una memoria temporanea. Dentro un iframe
+ * sandbox (es. l'area riservata del sito) localStorage è bloccato: senza questa riserva zustand
+ * salterebbe l'idratazione, `hydrated` resterebbe false e l'app si fermerebbe su "Caricamento…".
+ * Con la memoria temporanea i dati valgono solo finché la pagina resta aperta (usare Salva JSON).
+ */
+function browserStorage(): StateStorage {
+  try {
+    const probe = "__bilancio_probe__";
+    localStorage.setItem(probe, "1");
+    localStorage.removeItem(probe);
+    return localStorage;
+  } catch {
+    const memory = new Map<string, string>();
+    return {
+      getItem: (name) => memory.get(name) ?? null,
+      setItem: (name, value) => void memory.set(name, value),
+      removeItem: (name) => void memory.delete(name),
+    };
+  }
+}
 
 function genId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -166,6 +188,7 @@ export const useStore = create<Store>()(
     }),
     {
       name: LS_KEY,
+      storage: createJSONStorage(browserStorage),
       partialize: (state) => ({
         periods: state.periods,
         overrides: state.overrides,

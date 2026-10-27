@@ -22,6 +22,10 @@ I dati salvati nel browser sono gli stessi della vecchia versione a file unico
 (chiave `bilancio_app_state_v1`): aprendo la nuova versione con lo stesso browser si ritrovano i
 periodi già importati. Per spostarli su un altro computer usare **Salva JSON / Carica JSON**.
 
+Se il browser non consente `localStorage` (per esempio quando l'app è pubblicata in un iframe
+sandbox, come nell'area riservata di giovannigor.vercel.app) l'app parte comunque e tiene i dati in
+memoria finché la pagina resta aperta: per conservarli usare **Salva JSON / Carica JSON**.
+
 ## Sviluppo
 
 ```bash
